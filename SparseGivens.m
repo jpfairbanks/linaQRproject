@@ -20,7 +20,11 @@ try
     Qt = eye(m);
     R = A;
     
-    for j = 1:size(ind)
+    if ((length(ind) == 1) && (ind(1) == n))
+        return;
+    end
+    
+    for j = 1:1:length(ind)
         ndx = ind(j);
         % this loop removes non-zero column entries
         for i = m:-1:ndx+1
@@ -32,7 +36,7 @@ try
         end
         
         % this takes care of fill-ins
-        if j ~= size(ind)
+        if j ~= length(ind)
             % this loop removes fill-in between non-zero columns
             for i = ndx+1:1:ind(j+1)-1
                 G = eye(m);
@@ -43,8 +47,9 @@ try
             end
         else
             % this loop removes all remaining fill-ins
-            for i = n-size(ind):1:n-1
-                for k = i+1:1:n
+            for i = ndx+1:1:n-1
+                val = min(length(ind),n-i);
+                for k = i+1:1:i+val
                     G = eye(m);
                     [c,s] = Givens(R(i,i),R(k,i));
                     R([i,k],i:n) = [c -s; s c]*R([i,k],i:n);
