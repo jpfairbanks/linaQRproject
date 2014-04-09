@@ -34,7 +34,8 @@ try
             G([i-1,i],[i-1,i]) = [c s; -s c];
             Qt = G*Qt;            
         end
-        
+        display('oh no we created fill in');
+        display(R);
         % this takes care of fill-ins
         if j ~= length(ind)
             % this loop removes fill-in between non-zero columns
@@ -45,7 +46,11 @@ try
                 G([i,i+1],[i,i+1]) = [c s; -s c];
                 Qt = G*Qt;            
             end
+            display('did we catch all of the fill in')
+            display(R);
         else
+            display('fillin else case')
+            display(R);
             % this loop removes all remaining fill-ins
             for i = ndx+1:1:n-1
                 val = min(length(ind),n-i);
