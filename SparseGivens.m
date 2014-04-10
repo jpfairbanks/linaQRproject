@@ -31,7 +31,7 @@ try
             G = eye(m);
             [c,s] = Givens(R(i-1,ndx),R(i,ndx));
             R(i-1:i,ndx:n) = [c -s; s c]*R(i-1:i,ndx:n);
-            G([i-1,i],[i-1,i]) = [c s; -s c];
+            G([i-1,i],[i-1,i]) = [c -s; s c];
             Qt = G*Qt;            
         end
         display('oh no we created fill in');
@@ -43,7 +43,7 @@ try
                 G = eye(m);
                 [c,s] = Givens(R(i,i),R(i+1,i));
                 R(i:i+1,i:n) = [c -s; s c]*R(i:i+1,i:n);
-                G([i,i+1],[i,i+1]) = [c s; -s c];
+                G([i,i+1],[i,i+1]) = [c -s; s c];
                 Qt = G*Qt;            
             end
             display('did we catch all of the fill in')
@@ -52,14 +52,27 @@ try
             display('fillin else case')
             display(R);
             % this loop removes all remaining fill-ins
-            for i = ndx+1:1:n-1
-                val = min(length(ind),n-i);
-                for k = i+1:1:i+val
-                    G = eye(m);
-                    [c,s] = Givens(R(i,i),R(k,i));
-                    R([i,k],i:n) = [c -s; s c]*R([i,k],i:n);
-                    G([i,k],[i,k]) = [c s; -s c];
-                    Qt = G*Qt;
+            if m == n
+                for i = ndx+1:1:n-1
+                    val = min(length(ind),n-i);
+                    for k = i+1:1:i+val
+                        G = eye(m);
+                        [c,s] = Givens(R(i,i),R(k,i));
+                        R([i,k],i:n) = [c -s; s c]*R([i,k],i:n);
+                        G([i,k],[i,k]) = [c -s; s c];
+                        Qt = G*Qt;
+                    end
+                end
+            else
+                for i = ndx+1:1:n
+                    val = min(length(ind),m-i);
+                    for k = i+1:1:i+val
+                        G = eye(m);
+                        [c,s] = Givens(R(i,i),R(k,i));
+                        R([i,k],i:n) = [c -s; s c]*R([i,k],i:n);
+                        G([i,k],[i,k]) = [c -s; s c];
+                        Qt = G*Qt;
+                    end
                 end
             end
         end

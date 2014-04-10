@@ -30,7 +30,11 @@ try
     Q = eye(m);
     for j = n:-1:1
         v = vertcat(1,A(j+1:m,j));
-        beta = 2/(1+norm(A(j+1:m,j),2)^2);
+        if (A(j+1:m,j)'*A(j+1:m,j) == 0)
+            beta = 0;
+        else
+            beta = 2/(1+norm(A(j+1:m,j),2)^2);
+        end
         Q(j:m,j:m) = Q(j:m,j:m)-beta*v*(v'*Q(j:m,j:m));
     end
     
