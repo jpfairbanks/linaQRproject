@@ -20,11 +20,9 @@ try
     
     for j = 1:n
         for i = m:-1:j+1
-            G = eye(m);
             [c,s] = Givens(R(i-1,j),R(i,j));
             R(i-1:i,j:n) = [c -s; s c]*R(i-1:i,j:n);
-            G([i-1,i],[i-1,i]) = [c s; -s c];
-            Q = Q*G;            
+            Q(:,[i-1,i]) = Q(:,[i-1,i])*[c s; -s c];            
         end
     end
 
