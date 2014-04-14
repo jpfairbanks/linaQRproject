@@ -1,0 +1,217 @@
+%%  siamltex.cls (main LaTeX macro file for SIAM)
+%%  siamltex.sty (includes siamltex.cls for compatibility mode)
+%%  siam10.clo   (size option for 10pt papers)
+%%  subeqn.clo   (allows equation numbners with lettered subelements)
+%%  siam.bst     (bibliographic style file for BibTeX)
+%%  docultex.tex (documentation file)
+%%  lexample.tex (this file)
+%%
+%% \CharacterTable
+%%  {Upper-case    \A\B\C\D\E\F\G\H\I\J\K\L\M\N\O\P\Q\R\S\T\U\V\W\X\Y\Z
+%%   Lower-case    \a\b\c\d\e\f\g\h\i\j\k\l\m\n\o\p\q\r\s\t\u\v\w\x\y\z
+%%   Digits        \0\1\2\3\4\5\6\7\8\9
+%%   Exclamation   \!     Double quote  \"     Hash (number) \#
+%%   Dollar        \$     Percent       \%     Ampersand     \&
+%%   Acute accent  \'     Left paren    \(     Right paren   \)
+%%   Asterisk      \*     Plus          \+     Comma         \,
+%%   Minus         \-     Point         \.     Solidus       \/
+%%   Colon         \:     Semicolon     \;     Less than     \<
+%%   Equals        \=     Greater than  \>     Question mark \?
+%%   Commercial at \@     Left bracket  \[     Backslash     \\
+%%   Right bracket \]     Circumflex    \^     Underscore    \_
+%%   Grave accent  \`     Left brace    \{     Vertical bar  \|
+%%   Right brace   \}     Tilde         \~}
+
+
+\documentclass[final,leqno]{siamltex}
+
+\usepackage{jpfairbanks}
+% definitions used by included articles, reproduced here for 
+% educational benefit, and to minimize alterations needed to be made
+% in developing this sample file.
+
+\newcommand{\pe}{\psi}
+\def\d{\delta} 
+\def\ds{\displaystyle} 
+\def\e{{\epsilon}} 
+\def\eb{\bar{\eta}}  
+\def\enorm#1{\|#1\|_2} 
+\def\Fp{F^\prime}  
+\def\fishpack{{FISHPACK}} 
+\def\fortran{{FORTRAN}} 
+\def\gmres{{GMRES}} 
+\def\gmresm{{\rm GMRES($m$)}} 
+\def\Kc{{\cal K}} 
+\def\norm#1{\|#1\|} 
+\def\wb{{\bar w}} 
+\def\zb{{\bar z}} 
+
+% some definitions of bold math italics to make typing easier.
+% They are used in the corollary.
+
+\def\bfE{\mbox{\boldmath$E$}}
+\def\bfG{\mbox{\boldmath$G$}}
+
+\title{QR factorization with sparse additive updates\thanks{Thanks}}
+
+% The thanks line in the title should be filled in if there is
+% any support acknowledgement for the overall work to be included
+% This \thanks is also used for the received by date info, but
+% authors are not expected to provide this.
+
+\author{James Fairbanks and Domenic Carr}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Abstract goes here.
+\end{abstract}
+
+\begin{keywords} 
+QR factorization, Incremental Computation, Streaming Linear Algebra.
+\end{keywords}
+
+\begin{AMS}
+15A15, 15A09, 15A23
+\end{AMS}
+
+\pagestyle{myheadings}
+\thispagestyle{plain}
+\markboth{CSE6443}{Course Project}
+
+
+\section{Introduction and examples}
+This paper concerns the goal of maintaining a least squares fit with changing data. In the literature, low rank updates, and the addition of new data points 
+have been studied \cite{incrementalGivens} \cite{LowrankQRupdate}. In this work we address making changes to dimensions of the observed data. 
+We take the case where $A$ is an $m\times n$ matrix with $m \ge n $. We have an update to $A$ called $\Delta A$ which has only a few nonzero columns.
+This can correspond to the fact that a few dimensions have updates. For example when studying the term document matrix $A_{i,j}$ represents the number of 
+occurances of word $i$ in document $j$. If the $j$th document changes and thus acquires new words then $\Delta A$ will contain nonzero entries only in the $j$th column.
+We can take advantage of this structure and accelerate the QR decomposition of $A+\Delta A$ by leveraging the information contained in the QR factorization of $A$.
+
+Another example is a dynamic graph where new edges are presented and the algorithm is using a low rank representation of vertices based on $QR_k$ where $R_k$ a rank $k$ truncated version of $R$.
+Then updates to $A$ are the new edges and changes in this low rank representation can be used to study the dynamics of the graph \cite{lowrankgraphrepresentations}.
+
+\subsection{Goals}
+In this paper we present two specialized forms of the givens rotation algorithm that perform these updates. We give an equation counting the flops used by each method, and compare them to standard Householder QR algorithm. 
+Since these equations depend on which columns are updated, we give an average case analysis under the model of randomly selected columns. We experimentally estimate the cross over point for various values of $m,n,k$ where $m$ is the number of rows, $n$ is the number of columns and $k$ is the number of updated columns.
+\section{Algorithm}
+We exploit a key structure in this problem, which is that if $X = xe_i^T$ for some vector $x\in \R^m$ and $Q$ is a matrix in $\R^{m\times n}$ then $Q^TX$ has nonzero entries only in the $i$th column.
+These implies that updates to any number of data elements that occur in the same dimension, incur the same number of nonzero entries when an attempt is made to update the QR factorization.
+We also use the fact that Givens rotations are able to selectively eliminate entries of a matrix while creating the orthogonal transformation $Q$ and upper triangular factor $R$.
+This selectivity allows us to use Givens rotations in a way that we could not use Householder transformations. For example if the $i$th column of $A$ contained nonzero elements, then applying a Householder transformation
+on the $ith$ dimension would create fill-in entries in potentially every element in columns $i\dots n$. Thus our sparsity structure has been completely nullified in the process of a single Householder transformation. And this would necessitate performing $n-i$ transformations to fix the damage caused by changing the $ith$ column.
+
+The Givens rotations allow us to selectively eliminate entries of the matrix and in the next section we will consider different possible orderings of the rotations and count the fill-in introduced by each ordering.
+\section{Annihilation Ordering}
+We must decide to go row-wise or column-wise and decide whether to eliminate from the top to bottom or bottom to top.
+We first eliminate row-wise operation. If we go from top to bottom row-wise, we will introduce zeros in the entire row by eliminating against row $1$.
+%This fact can be proved inductively.
+Eliminating the original entries of row $j$ will introduce fill in in all of row $j$.
+If we go from bottom to top, then we introduce oscillatory fill in. eliminating entry $m,i_2$ will introduce a zero in entry $m,i_1$ and vice versa.
+
+This indicates that we should operate column-wise. If we eliminate entries from the left most nonzero column, we introduce fill-in entries on the first off diagonal of the entire matrix. We then eliminate the fill-in entries between the leftmost nonzero column (which has now been zeroed) and then next leftmost nonzero column.
+This incurs the cost of eliminating $i_{j+1}-i_{j}$ fill-in entries. We then eliminate column $i_{j+1}$ which introduces another off diagonal of fill-in entries.
+The total number of fill-in entries eliminated is 
+\[ Lazy = \sum_{j=1}^k \sum_{t=1}^j (i_{j+1} - i_{j} - t) = \sum_{j=1}^k j(i_{j+1}-i_{j} - \frac{j+1}{2})
+\]
+This is called the lazy elimination strategy because we defer elimination of fill-in entries until the last possible moment.
+
+The eager strategy eliminates fill-in as soon as it is created. We eliminate column $i_j$ and this fills in the first off diagonal. Then before eliminating column $i_{j+1}$ we annihilate the first off-diagonal entries. Then when eliminating column $i_{j+1}$ we reintroduce fill-in on the first off diagonal between columns $i_{j+1}$ and $n$.
+The total number of fill-in entries removed is
+\[ Eag = \sum_{j=1}^k j(n - i_{j}) = n\sum_{j=1}^k j - \sum_{j=1}^k ji_j = \frac{nk(k+1)}{2} - \sum_{j=1}^k i_j
+%\sum_{j=1}^k n-i_j + \sum_{j=1}^k j(i_{j+1}-i_{j} - \frac{j+1}{2}
+\]
+Both methods must eliminate the original nonzeros which are counted by $\sum_{j=1}^k n-i_j $. 
+\begin{align}
+Eager-Lazy &= \sum_{j=1}^k nj - \sum_{j=1}^k ji_j - \sum_{j=1}^k j(i_{j+1}-i_{j} + \frac{j+1}{2}) \\
+& = \sum_{j=1}^k nj - \sum_{j=1}^k j(i_{j+1} + \frac{j+1}{2})
+\end{align}
+Since $n\ge i_{j+1}$ for all $j$, we conclude that the lazy strategy is more efficient.
+That is, the lazy elimination strategy uses fewer eliminations than the eager strategy.
+The core cause of this discrepancy is that the lazy strategy eliminates the $k$ off diagonals and the eager strategy eliminates the first off diagonal $k$ times, and since the $i$th off diagonal has $n-i$ elements, this is more efficient.
+%\sum_{j=1}^k n-i_j +
+
+\subsection{Another interpretation of the eager method}
+We will now explain the eager method using an alternative definition. Suppose that $\Delta A = \sum_{j=1}^k A_j$ where each $A_j$ has nonzero entries only in the $i_j$th column. That is $A_j = xe_{i_j}^T$
+Then we can use $k$ updates on a single column each. We make use of the equations 
+\begin{align}
+Q^TA_1 + R & =& Q_1 R_1 \\
+Q_1^TA_2 + R_1 & =& Q_2 R_2 \\
+Q_{k-1}^TA_k + R_{k-1} &=& Q_k R_k 
+\end{align}
+
+If we iteratively add one column at a time, then Givens rotations allows us to compute $Q_{j+1}, R_{j+1}$ from $Q_j,R_j+Q_jA_{j+1}$.
+This requires $m-i_j$ rotations to elinate the one column and fills in one off diagonal with $n-i_j$ elements. 
+This gives 
+\[6(n-i_j)(m-i_j) + 6(n-i_j)(n-i_j)\]
+flops to  perform the rotations and
+\[6n(m-i_j) + 6n(n-i_j)\]
+flops to update $Q$
+Each iteration also requires a single dense matrix vector product because we must compute $Q_j^TA_{j+1} + R_j$
+We must perform this $k$ times. 
+
+If we examine this method, we see that when performing the factorization
+\[Q_{k-1}^TA_k + R_{k-1} = Q_k R_k \]
+ we introduce the fill in entries and immediately eliminate them. This recovers the eager strategy discussed earlier.
+\todo[inline]{Should we present this interpretation first?}
+
+\section{Comparison to Householder QR factorization}
+From Golub and Van Loan, we have the flop counts of the Householder reflection method where we are accumulating the orthogonal basis $Q$ as $4(m^2n - mn^2 +n^3/3) + 2(n^2m - n/3)$. 
+We know that the static Givens rotations methods takes $6mn(n+1)/2 + 6mn^2$ to accumulate the orthogonal matrix $Q$. 
+Our method depends on which particular columns are perturbed by the update and so gives much more complicated formula.
+For the sparse update we use at most
+\[
+  \sum_{j=1}^k 6(n-i_j)(m-i_j) + 6(n-i_{j})^{+}
+\]
+flops for eliminating the fill in. This is an upper bound because when counting the flops for eliminating the fill in entries, we count all of the fill in entries that are in the $j$th gap, as if they are at the position $(i_{j+1},i_j)$. These flops are also accompanied by the flops necessary to update $Q$, which are counted as
+
+\[
+  \sum_{j=1}^k 6n(m-i_j) + 6nj(i_{j+1}-i_{j} + \frac{j+1}{2}
+\]
+
+
+\section*{Acknowledgments}
+The author thanks the anonymous authors whose work largely
+ 
+ 
+\begin{thebibliography}{10} 
+
+\bibitem{Golub-VanLoan}
+{\sc G.~H. Golub and C.~F. Van~Loan}, {\em Matrix Computations}, 
+  Second ed., The Johns  Hopkins University Press, Baltimore, MD,  1989.
+
+\bibitem{More}
+{\sc J.~J. Mor\'e}, {\em A collection of nonlinear model problems}, in
+  Computational Solutions of Nonlinear Systems of Equations, E.~L. Allgower and
+  K.~Georg, eds., Lectures in Applied Mathematics, Vol. 26, American
+  Mathematical Society, Providence, RI, 1990, pp.~723--762.
+
+\bibitem{Saad}
+{\sc Y.~Saad}, {\em Krylov subspace methods for solving large unsymmetric
+  linear systems}, Math. Comp., 37 (1981), pp.~105--126.
+
+\bibitem{Saad-Schultz}
+{\sc Y.~Saad and M.~H. Schultz}, {\em {\rm GMRES}: A generalized minimal
+  residual method for solving nonsymmetric linear systems}, SIAM J. Sci. Statist.
+  Comput., 7 (1986), pp.~856--869.
+
+\bibitem{Swarztrauber-Sweet}
+{\sc P.~N. Swarztrauber and R.~A. Sweet}, {\em Efficient {\rm FORTRAN}
+  subprograms for the solution of elliptic partial differential equations}, ACM
+  Trans. Math. Software, 5 (1979), pp.~352--364.
+
+\bibitem{Walker88}
+{\sc H.~F. Walker}, {\em Implementation of the {\rm GMRES} method using
+  {H}ouseholder transformations}, SIAM J. Sci. Statist. Comput., 9 (1988),
+  pp.~152--163.
+
+\bibitem{Walker89}
+\sameauthor, {\em Implementations of
+  the {\rm GMRES} method}, Computer Phys. Comm., 53 (1989),  pp.~311--320.
+
+\end{thebibliography} 
+
+\end{document} 
+

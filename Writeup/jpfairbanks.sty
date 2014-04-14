@@ -1,0 +1,86 @@
+%% LISCENSE BSD:  James Paul Fairbanks: a style file for math, parallel computing and probability/statistics.
+%Copyright (C) 2014 James Paul Fairbanks
+%All rights reserved.
+%
+%Redistribution and use in source and binary forms, with or without
+%modification, are permitted provided that the following conditions are met:
+%1. Redistributions of source code must retain the above copyright
+%notice, this list of conditions and the following disclaimer.
+%2. Redistributions in binary form must reproduce the above copyright
+%notice, this list of conditions and the following disclaimer in the
+%documentation and/or other materials provided with the distribution.
+%3. Neither the name of the Georgia Institute of Technology nor the
+%names of its contributors may be used to endorse or promote products
+%derived from this software without specific prior written permission.
+%
+%THIS SOFTWARE IS PROVIDED BY James Paul Fairbanks ''AS IS'' AND ANY
+%EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+%WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+%DISCLAIMED. IN NO EVENT SHALL James Paul Fairbanks BE LIABLE FOR ANY
+%DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+%(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+%LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+%ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+%(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+%SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+%package definition
+\NeedsTeXFormat{LaTeX2e}[1994/06/01]
+\ProvidesPackage{jpfairbanks}[2014/01/16 James Fairbanks Custom Package]
+%packages that are required to function
+\RequirePackage{amsmath,amsfonts,amssymb}
+\RequirePackage{amsthm}
+\RequirePackage{mathtools} %DeclarePairedDelimiter
+\RequirePackage{fancyhdr} % Required for custom headers
+\RequirePackage{lastpage} % Required to determine the last page for the footer
+\RequirePackage{extramarks} % Required for headers and footers
+\RequirePackage[usenames,dvipsnames]{color} % Required for custom colors
+\RequirePackage{graphicx} % Required to insert images
+\RequirePackage{listings} % Required for insertion of code
+%todo commands
+\RequirePackage[colorinlistoftodos]{todonotes}
+%\todo[inline, color=green!40]{This is an inline comment.}
+%\todo{Here's a comment in the margin!}
+
+%general
+%\newcommand{\paren}[1]{\left(#1\right)}
+\DeclarePairedDelimiter\abs{\lvert}{\rvert}
+\DeclarePairedDelimiter\paren{\lparen}{\rparen}
+\DeclarePairedDelimiter\set{\left\{}{\right\}}
+\DeclarePairedDelimiter\ceil{\lceil}{\rceil}
+\DeclarePairedDelimiter\floor{\lfloor}{\rfloor}
+
+% math
+\newcommand{\R}{\ensuremath{\mathbb{R}}}
+\newcommand{\C}{\ensuremath{\mathbb{C}}}
+\newcommand{\Z}{\ensuremath{\mathbb{Z}}}
+\newcommand{\f}[2]{{\ensuremath{f\paren{#1,#2}}}}
+\newcommand{\I}[1]{I\paren{#1}}
+%linear algebra
+\newcommand{\norm}[1]{\left\|#1\right\|} % no subscript
+\newcommand{\pnorm}[2]{\left\|#1\right\|_{#2}} %works for any norm
+
+%stats
+\renewcommand{\P}[1]{P\left(#1\right)}
+\newcommand{\Pcond}[2]{P\left(#1\middle\vert#2\right)}
+\newcommand{\xbar}{\bar{x}}
+
+% complextity
+\newcommand{\bigo}[1]{\ensuremath{\mathcal{O}\left(#1\right)}}
+\newcommand{\bigtheta}[1]{\ensuremath{\mathcal{\Theta}\left(#1\right)}}
+\newcommand{\bigohm}[1]{\ensuremath{\mathcal{\Omega\left(#1\right)}}}
+\newcommand{\bitstr}{\set{0,1}^n}
+\newcommand{\polylog}{poly-logarithmic}
+\newcommand{\lineartime}{\bigo{n}}
+\newcommand{\logtime}{\bigo{\log{n}}}
+
+%parallel algorithms
+\newcommand{\T}[2]{\ensuremath{\operatorname{T}\left(#1,#2\right)}}
+\renewcommand{\S}[1]{\ensuremath{\operatorname{S}\left(#1\right)}}
+\newcommand{\E}[1]{\ensuremath{\operatorname{E}\left(#1\right)}}
+\newcommand{\tnp}{\T{n}{p}}
+\newcommand{\tno}{\T{n}{1}}
+
+%environments
+
+\endinput
