@@ -44,10 +44,13 @@ try
 
         % this takes care of fill-ins
         for i = ndx+1:1:n
-            [c,s] = Givens(R(i,i),R(i+1,i));
-            R(i:i+1,i:n) = [c -s; s c]*R(i:i+1,i:n);
-            Qt(i:i+1,:) = [c -s; s c]*Qt(i:i+1,:);
-
+            if i+1 > m
+                break;
+            else
+                [c,s] = Givens(R(i,i),R(i+1,i));
+                R(i:i+1,i:n) = [c -s; s c]*R(i:i+1,i:n);
+                Qt(i:i+1,:) = [c -s; s c]*Qt(i:i+1,:);
+            end
         end
     end
 
