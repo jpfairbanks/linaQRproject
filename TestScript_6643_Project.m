@@ -1,18 +1,21 @@
 % Domenic Carr & James Fairbanks
 % MATH6643 Project
 
-% Testing Script for QR by Givens
+% Unit Test Script for QR by Givens
 
 display('new')
 
+%% GivensQR Unit Test
 A = [2 1 5; -1 3 -1; 2 1 1];
 [Q,R] = GivensQR(A);
 assert(qrerror(A,Q,R) < 1e-10, 'GivensQR failed');
 
+%% HouseholderQR Unit Test
 A = [2 1 5; -1 3 -1; 2 1 1];
 [Q,R] = HouseholderQR(A);
 assert(qrerror(A,Q,R) < 1e-10, 'HouseholderQR failed');
 
+%% SparseGivens QR Unit Test 4x4
 A = [2 1 5 4; -1 3 1 2; 2 0 1 1; -1 0 0 -3];
 display(A);
 ind = ones(1,1);
@@ -23,6 +26,7 @@ A = [2 1 5 4; -1 3 1 2; 2 0 1 1; -1 0 0 -3]
 assert(qrerror(A,Qt',R) < 1e-10, 'SparseGivens failed');
 [Q,R] = qr(A);
 
+%% SparseGivens QR Unit Test 5x5
 B = [2 1 5 4 -2; 1 -3 1 2 3; 0 2 0 1 -4; 4 -1 0 0 -3; 3 -2 0 0 1]
 
 [Qt,R] = SparseGivens(B,[1,2]);
@@ -32,7 +36,7 @@ R
 
 [Q,R] = qr(B);
 
-% SparseQR fails for nonsquare A
+%% SparseGivens QR Unit Test Nonsquare A
 m = 8;
 n = 4;
 A = rand(m,n)
@@ -45,7 +49,7 @@ display('R is not upper triangular')
 QtR = Qt*R
 assert(norm(triu(R)-R,'fro') < 1e-10, 'R is not upper triangular')
 
-% cannot recover B from Qt*R
+%% SparseGivens QR Unit Test 8x8 with DeltaA
 m = 8;
 n = 8;
 A = rand(m,n)
