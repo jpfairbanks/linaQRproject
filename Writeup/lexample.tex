@@ -56,7 +56,7 @@
 \def\bfE{\mbox{\boldmath$E$}}
 \def\bfG{\mbox{\boldmath$G$}}
 
-\title{QR factorization with sparse additive updates\thanks{Thanks}}
+\title{QR factorization with sparse additive updates}
 
 % The thanks line in the title should be filled in if there is
 % any support acknowledgement for the overall work to be included
@@ -105,7 +105,7 @@ We exploit a key structure in this problem, which is that if $X = xe_i^T$ for so
 These implies that updates to any number of data elements that occur in the same dimension, incur the same number of nonzero entries when an attempt is made to update the QR factorization.
 We also use the fact that Givens rotations are able to selectively eliminate entries of a matrix while creating the orthogonal transformation $Q$ and upper triangular factor $R$.
 This selectivity allows us to use Givens rotations in a way that we could not use Householder transformations. For example if the $i$th column of $A$ contained nonzero elements, then applying a Householder transformation
-on the $ith$ dimension would create fill-in entries in potentially every element in columns $i\dots n$. Thus our sparsity structure has been completely nullified in the process of a single Householder transformation. And this would necessitate performing $n-i$ transformations to fix the damage caused by changing the $ith$ column.
+on the $ith$ dimension would create fill-in entries in potentially every element in columns $i$ through $n$. Thus our sparsity structure has been completely nullified in the process of a single Householder transformation. And this would necessitate performing $n-i$ transformations to fix the damage caused by changing the $ith$ column.
 
 The Givens rotations allow us to selectively eliminate entries of the matrix and in the next section we will consider different possible orderings of the rotations and count the fill-in introduced by each ordering.
 \section{Annihilation Ordering}
@@ -140,11 +140,12 @@ The core cause of this discrepancy is that the lazy strategy eliminates the $k$ 
 \subsection{Another interpretation of the eager method}
 We will now explain the eager method using an alternative definition. Suppose that $\Delta A = \sum_{j=1}^k A_j$ where each $A_j$ has nonzero entries only in the $i_j$th column. That is $A_j = xe_{i_j}^T$
 Then we can use $k$ updates on a single column each. We make use of the equations 
-\begin{align}
-Q^TA_1 + R & =& Q_1 R_1 \\
-Q_1^TA_2 + R_1 & =& Q_2 R_2 \\
-Q_{k-1}^TA_k + R_{k-1} &=& Q_k R_k 
-\end{align}
+\begin{align*}
+Q^TA_1 + R &= Q_1 R_1 \\
+Q_1^TA_2 + R_1 &= Q_2 R_2 \\
+\vdots\\
+Q_{k-1}^TA_k + R_{k-1} &= Q_k R_k 
+\end{align*}
 
 If we iteratively add one column at a time, then Givens rotations allows us to compute $Q_{j+1}, R_{j+1}$ from $Q_j,R_j+Q_jA_{j+1}$.
 This requires $m-i_j$ rotations to elinate the one column and fills in one off diagonal with $n-i_j$ elements. 
@@ -208,24 +209,25 @@ So this tells us that the break even point will increase as the size of the matr
 %    &= C_1\frac{n + m-n}{k + (m/n)^2k} + C_2\frac{n-n^2}{k + (n/m)^2k}\\
 %    &= C_1
 \section{Testing}
-Our input space has three dimensions: the number of rows of $A$, $m$; the number of columns of $A$, $n$; and, the number of nonzero columns in $\Delta A$, $k$.  We examined values of $m$ of 100, 500, and 1000.  Based on the value of $m$, we chose the values of $n$ and $k$ using the following method:
+Our input space has three dimensions: the number of rows of $A$, $m$; the number of columns of $A$, $n$; and, the number of nonzero columns in $\Delta A$, $k$.  We examined values of $m$ of 100, 500, and 1000.  Based on the value of $m$, we chose the values of $n$ and $k$ from the following sets:
 \begin{align*}
-    \{n &= 2^i \mid 1\le i \le \log{\left(m\right)}\}\\
-    \{k &= 2^i \mid 1 \le i \le \log{\left(n/2\right)}\}
+    n \in &\{ 2^i \mid 1\le i \le \log{\left(m\right)}\}\\
+    k \in &\{ 2^i \mid 1 \le i \le \log{\left(n/2\right)}\}
 \end{align*}
 Altogether, this resulted in over 100 distinct combinations of ($m$,$n$,$k$) .  To compare each algorithm's runtime for a ($m$,$n$$,k$)-combination, we applied the following testing procedure:
 
 For given values of $m$, $n$, and $k$,
 \begin{enumerate}
-\item Generate random $m\times n$ matrix $A$
-\item Generate $k$ random $m\times 1$ vectors 
+\item Generate a random $m\times n$ matrix $A$
+\item Generate $k$ vectors uniformly from $\R^k$
 \item Place the $k$ vectors into random columns of $\Delta A$
 \item Execute each QR Algorithm on $A$+$\Delta A$	
-\item Repeat Steps (1)-(4) 30 times
-\item Determine median time to perform Step (4)
+\item Repeat Steps (1)-(4) 30 times collecting the runtime
+\item Determine median runtime 
 \item Perform Signed-Rank Test to determine statistical significance
 \end{enumerate}
-
+The signed rank test tells us if the difference of the two median runtimes are distinct, taking advantage
+of the fact that the runtime of the methods depend on which positions the perterbations occurred in.
 We implemented the three algorithms in Matlab and performed all testing on a laptop computer with an Intel i7 processor operating at 2.2 GHz.
 
 \section{Results and Discussion}
@@ -247,36 +249,30 @@ in Figures~\ref{fig:100arc}-~\ref{fig:1000arc} we see that there is nearly linea
 {\sc G.~H. Golub and C.~F. Van~Loan}, {\em Matrix Computations}, 
   Second ed., The Johns  Hopkins University Press, Baltimore, MD,  1989.
 
-\bibitem{More}
-{\sc J.~J. Mor\'e}, {\em A collection of nonlinear model problems}, in
-  Computational Solutions of Nonlinear Systems of Equations, E.~L. Allgower and
-  K.~Georg, eds., Lectures in Applied Mathematics, Vol. 26, American
-  Mathematical Society, Providence, RI, 1990, pp.~723--762.
+\bibitem{daniel-james}{\sc Daniel, James W., et al.}, {\em Reorthogonalization and stable algorithms for updating the Gram-Schmidt QR factorization.} in Mathematics of Computation 30.136 (1976): 772-795.
 
-\bibitem{Saad}
-{\sc Y.~Saad}, {\em Krylov subspace methods for solving large unsymmetric
-  linear systems}, Math. Comp., 37 (1981), pp.~105--126.
-
-\bibitem{Saad-Schultz}
-{\sc Y.~Saad and M.~H. Schultz}, {\em {\rm GMRES}: A generalized minimal
-  residual method for solving nonsymmetric linear systems}, SIAM J. Sci. Statist.
-  Comput., 7 (1986), pp.~856--869.
-
-\bibitem{Swarztrauber-Sweet}
-{\sc P.~N. Swarztrauber and R.~A. Sweet}, {\em Efficient {\rm FORTRAN}
-  subprograms for the solution of elliptic partial differential equations}, ACM
-  Trans. Math. Software, 5 (1979), pp.~352--364.
-
-\bibitem{Walker88}
-{\sc H.~F. Walker}, {\em Implementation of the {\rm GMRES} method using
-  {H}ouseholder transformations}, SIAM J. Sci. Statist. Comput., 9 (1988),
-  pp.~152--163.
-
-\bibitem{Walker89}
-\sameauthor, {\em Implementations of
-  the {\rm GMRES} method}, Computer Phys. Comm., 53 (1989),  pp.~311--320.
+\bibitem{gill1976}{\sc Gill, Philip E., et al.}, {\em Methods for modifying matrix factorizations.} Mathematics of Computation 28.126 (1974): 505-535.
 
 \end{thebibliography} 
 
 \end{document} 
 
+% article{daniel1976reorthogonalization,
+%   title={Reorthogonalization and stable algorithms for updating the Gram-Schmidt 𝑄𝑅 factorization},
+%   author={Daniel, James W and Gragg, Walter Bill and Kaufman, Linda and Stewart, GW},
+%   journal={Mathematics of Computation},
+%   volume={30},
+%   number={136},
+%   pages={772--795},
+%   year={1976}
+% }
+
+% @article{gill1974methods,
+%   title={Methods for modifying matrix factorizations},
+%   author={Gill, Philip E and Golub, Gene H and Murray, Walter and Saunders, Michael A},
+%   journal={Mathematics of Computation},
+%   volume={28},
+%   number={126},
+%   pages={505--535},
+%   year={1974}
+% }
