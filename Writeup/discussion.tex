@@ -1,0 +1,27 @@
+\newcommand{\plotwidth}{2.5in} %width of the plots in the tabular below
+%insert the plots of crossover points and speedup ratios
+\begin{figure}
+\begin{tabular}{cc}
+\includegraphics[width=\plotwidth]{tratio100.png} & \includegraphics[width=\plotwidth]{tratioarc100.png} \\
+\includegraphics[width=\plotwidth]{tratio500.png} & \includegraphics[width=\plotwidth]{tratioarc500.png} \\
+\includegraphics[width=\plotwidth]{tratio1000.png} & \includegraphics[width=\plotwidth]{tratioarc1000.png}\\
+\end{tabular}
+\caption{$r_e$ as a function of $k$ (left) and as a function of $n$ (right) }
+% \label{fig:100plot}
+% \label{fig:500plot}
+\label{fig:1000plot}
+\end{figure}
+%insert the tables that have the speedup frames.
+\begin{figure}
+\centering
+% tables produced by ls sfm* | xargs -I % -n 1 sed s/NaN/---/g % | cat > tables.tex
+\input{tables.tex}
+\caption{Tables of $r_e$ for $m=100,500,1000$ dashes indicate the test was not run}
+\end{figure}
+
+\begin{figure}
+\centering
+% tables produced
+\input{bounds.tex}
+\caption{Tables of bounds on the $k$ where $r_e=1$. lower bounds (left) followed by upper bounds (right), dashes indicate the test was not run}
+\end{figure}
