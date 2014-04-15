@@ -237,10 +237,10 @@ After computing $t_{full}$, $t_{eager}$ and $t_{lazy}$,  the median runtime for 
 \[r_l(m,n,k) = \frac{t_{full}(m,n,k)}{t_{lazy}(m,n,k)}
 \textrm{\hspace{1cm}and\hspace{1cm}}
 r_e(m,n,k) = \frac{t_{full}(m,n,k)}{t_{eager}(m,n,k)}\]
-Whenever these ratios are greater than 1, the specialized updating algorithms perform better than re-computing the QR factorization using Householder transformations.  Once these ratios become less than 1, however, it is more advantageous to re-compute the QR factorization.  In each of Figures~\ref{fig:100plot} through~\ref{fig:1000plot}, we include a line called ``breakeven", which indicates when the ratio is equal to 1.  All points above this line imply the specialized updating algorithm is faster, while all points below this line imply the Householder algorithm is faster. This perspective is useful when the data vectors are of a fixed dimension and a practitioner is determining how columns can be altered in one batch before recomputation is more efficient than updating.
+Whenever these ratios are greater than 1, the specialized updating algorithms perform better than re-computing the QR factorization using Householder transformations.  Once these ratios become less than 1, however, it is more advantageous to re-compute the QR factorization.  In Figure~\ref{fig:1000plot} (left), we include a line called ``breakeven", which indicates when the ratio is equal to 1.  All points above this line imply the specialized updating algorithm is faster, while all points below this line imply the Householder algorithm is faster. This perspective is useful when the data vectors are of a fixed dimension and a practitioner is determining how columns can be altered in one batch before recomputation is more efficient than updating.
 
 Another perspective is determining for a fixed batch size $k$, how much faster is updating only that batch compared to the entire factorization as a function of the dimensionality of the problem $n$.
-in Figures~\ref{fig:100arc}-~\ref{fig:1000arc} we see that there is nearly linear growth in $r(m_0, n, k_0)$ as $n$ increases, when $m$ is large. This is what we would expect from the analytic bounds on flop counts.
+in Figure~\ref{fig:1000plot} (right) we see that there is nearly linear growth in $r(m_0, n, k_0)$ as $n$ increases, when $m$ is large. This is what we would expect from the analytic bounds on flop counts.
 
 \input{discussion.tex}
 \begin{thebibliography}{10}
