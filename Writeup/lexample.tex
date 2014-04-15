@@ -23,11 +23,13 @@
 %%   Right brace   \}     Tilde         \~}
 
 
-\documentclass[final,leqno]{siamltex}
+\documentclass[final,leqno,fullpage]{siamltex}
 
 \usepackage{jpfairbanks}
-%\usepackage{tabularx}
-\usepackage{tabu}
+\usepackage{tabularx}
+\usepackage{subfig}
+\usepackage{booktabs}
+% \usepackage{tabu}
 % definitions used by included articles, reproduced here for 
 % educational benefit, and to minimize alterations needed to be made
 % in developing this sample file.
@@ -162,7 +164,8 @@ If we examine this method, we see that when performing the factorization
 \section{Comparison to Householder QR factorization}
 From Golub and Van Loan, we have the flop counts of the Householder reflection method where we are accumulating the orthogonal basis $Q$ as $4(m^2n - mn^2 +n^3/3) + 2(n^2m - n/3)$. 
 We know that the static Givens rotations methods takes $6mn(n+1)/2 + 6mn^2$ to accumulate the orthogonal matrix $Q$. 
-Our method depends on which particular columns are perturbed by the update and so gives much more complicated formula.
+Our method depends on which particular columns are perturbed by the update and so gives much more complicated formula. 
+Let $(\cdot)^+$ be the function $max(\cdot, 0)$.
 For the sparse update we use at most
 \[
   \sum_{j=1}^k 6(n-i_j)(m-i_j) + 6(n-i_{j})^{+}
@@ -170,17 +173,75 @@ For the sparse update we use at most
 flops for eliminating the fill in. This is an upper bound because when counting the flops for eliminating the fill in entries, we count all of the fill in entries that are in the $j$th gap, as if they are at the position $(i_{j+1},i_j)$. These flops are also accompanied by the flops necessary to update $Q$, which are counted as
 
 \[
-  \sum_{j=1}^k 6n(m-i_j) + 6nj(i_{j+1}-i_{j} + \frac{j+1}{2}
+  \sum_{j=1}^k 6n(m-i_j) + 6nj\left(i_{j+1}-i_{j} + \frac{j+1}{2}\right)
 \]
 
-\section{Discussion}
-\input{discussion.tex}
+We can compare the flop counts of full recomputation with our sparse update methods. For the purpose of analytic tractability we will use the eager method and make use order of growth bounds.
+Under the assumption that $m\ge n$ and $m\approx m-1, n\approx n-1$ $k=1$ and $i_1=1$
+\begin{align*}
+T_{eager}(m,n,k) &= 6(n-1)(m-1) + 6(n-1)(n-1) + 6n(m-1) + 6n(n-1) + m^2\\
+    &\approx 12(nm+n^2) + m^2
+\end{align*}
+We can thus suppose that we are making $k$ updates to an $m,n$ matrix, we bound the cost of this operation by the $k$ times the cost to update the first column, which is the most expensive column to update.
+Thus we can derive a lower bound on the ratio of $T_{full}$ to $T_{eager}$.
 
-\section*{Acknowledgments}
-The author thanks the anonymous authors whose work largely
- 
- 
-\begin{thebibliography}{10} 
+\begin{align}\label{eqn:ratio}
+  \frac{T_{full}}{T_{eager}}(m,n,k) &\ge \frac{4m^2n - 4mn^2 + 4n^3/3 + 2n^2(m-n/3)}{12k(nm+n^2) + km^2}\\
+        &\ge \frac{4m^2n - 2mn^2 + 2n^3/3}{12(nm+n^2) + m^2}
+        %&\ge \frac{m^2n}{3k(nm+n^2) + km^2/4} - \frac{2mn^2}{12k(nm+n^2) + km^2} + \frac{2n/3}{12k(m/n+n) + k(m/n)^2}
+\end{align}
+
+For a fixed $m$ large enough, the Householder based methods are cubic in $n$ and the sparse updating methods are quadratic in $n$ because we need to accumulate $Q$. 
+Thus making this simplification we can model the performance ratio as
+\begin{equation}\label{eqn:model}
+    r_e(m,n,k) = \frac{C_m n^3}{n^2k} = \frac{Cn}{k}
+\end{equation}
+The relationship between $m$ and $n$ is accounted for in the dependence of $C_m$ on $m$. This model is useful for understanding the experimental results below.
+We see that as $n$ increases the performance ration should increase for a fixed $k$, and for a fixed $n$ the performance ratio is inversely proportional to $k$.
+From Equation~\ref{eqn:ratio} we can see that as $m$ increases for a fixed $n,k$ pair the proportionality parameter $C_m$ should increase.
+When $r_e=1$ the two methods will take the same amount of time, and the $k$ for which this occurs is called the break even point.
+The model described by Equation\ref{eqn:model} can produce a prediction about the break even point by solving $C_mn/k = 1$ that is $C_mn = k$.
+So this tells us that the break even point will increase as the size of the matrix increases. We verify this experimentally in the next section.
+
+
+%\frac{4m^2n - 4mn^2 + 4n^3/3 + 2n^2(m-n/3)}{m^2k + n^2k} &= C_1\frac{n + m-n}{k + (m/n)^2k} + C_2\frac{m^2n-mn^2}{m^2k + n^2k}\\
+%    &= C_1\frac{n + m-n}{k + (m/n)^2k} + C_2\frac{n-n^2}{k + (n/m)^2k}\\
+%    &= C_1
+\section{Testing}
+Our input space has three dimensions: the number of rows of $A$, $m$; the number of columns of $A$, $n$; and, the number of nonzero columns in $\Delta A$, $k$.  We examined values of $m$ of 100, 500, and 1000.  Based on the value of $m$, we chose the values of $n$ and $k$ using the following method:
+\begin{align*}
+    \{n &= 2^i \mid 1\le i \le \log{\left(m\right)}\}\\
+    \{k &= 2^i \mid 1 \le i \le \log{\left(n/2\right)}\}
+\end{align*}
+Altogether, this resulted in over 100 distinct combinations of ($m$,$n$,$k$) .  To compare each algorithm's runtime for a ($m$,$n$$,k$)-combination, we applied the following testing procedure:
+
+For given values of $m$, $n$, and $k$,
+\begin{enumerate}
+\item Generate random $m\times n$ matrix $A$
+\item Generate $k$ random $m\times 1$ vectors 
+\item Place the $k$ vectors into random columns of $\Delta A$
+\item Execute each QR Algorithm on $A$+$\Delta A$	
+\item Repeat Steps (1)-(4) 30 times
+\item Determine median time to perform Step (4)
+\item Perform Signed-Rank Test to determine statistical significance
+\end{enumerate}
+
+We implemented the three algorithms in Matlab and performed all testing on a laptop computer with an Intel i7 processor operating at 2.2 GHz.
+
+\section{Results and Discussion}
+
+After computing $t_{full}$, $t_{eager}$ and $t_{lazy}$,  the median runtime for each algorithm, we investigated the ratios of algorithm runtimes for various cross-sections in our data.  The most interesting ratios were
+
+\[r_l(m,n,k) = \frac{t_{full}(m,n,k)}{t_{lazy}(m,n,k)}
+\textrm{\hspace{1cm}and\hspace{1cm}}
+r_e(m,n,k) = \frac{t_{full}(m,n,k)}{t_{eager}(m,n,k)}\]
+Whenever these ratios are greater than 1, the specialized updating algorithms perform better than re-computing the QR factorization using Householder transformations.  Once these ratios become less than 1, however, it is more advantageous to re-compute the QR factorization.  In each of Figures~\ref{fig:100plot} through~\ref{fig:1000plot}, we include a line called ``breakeven", which indicates when the ratio is equal to 1.  All points above this line imply the specialized updating algorithm is faster, while all points below this line imply the Householder algorithm is faster. This perspective is useful when the data vectors are of a fixed dimension and a practitioner is determining how columns can be altered in one batch before recomputation is more efficient than updating.
+
+Another perspective is determining for a fixed batch size $k$, how much faster is updating only that batch compared to the entire factorization as a function of the dimensionality of the problem $n$.
+in Figures~\ref{fig:100arc}-~\ref{fig:1000arc} we see that there is nearly linear growth in $r(m_0, n, k_0)$ as $n$ increases, when $m$ is large. This is what we would expect from the analytic bounds on flop counts.
+
+\input{discussion.tex}
+\begin{thebibliography}{10}
 
 \bibitem{Golub-VanLoan}
 {\sc G.~H. Golub and C.~F. Van~Loan}, {\em Matrix Computations}, 

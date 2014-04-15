@@ -101,15 +101,19 @@ def computeBounds(df):
     #allocate
     lb = np.zeros((len(mlevels), len(nlevels)))
     ub = np.zeros((len(mlevels), len(nlevels)))
+    lbf= pd.DataFrame(index=nlevels) 
+    ubf= pd.DataFrame(index=nlevels)
     for i,m in enumerate(mlevels):
         for j,n in enumerate(nlevels):
             lb[i,j], ub[i,j] = breakevenpt(df,m,n)
-    return lb, ub
+        lbf[m] = lb[i,:]
+        ubf[m] = ub[i,:]
+    return lbf, ubf
 
 if __name__ == '__main__':
     #fp = "datafull.tsv"
     fp = "data/datafull.tsv"
-    plots = True
+    plots = False
     breakeven = True
     model = True
     #colnames = ["m", "n", "k", "tfull","teager","tlazy","sigfull","sigeager","siglazy","pfe", "pel", "pfl"]
@@ -138,11 +142,13 @@ if __name__ == '__main__':
             # print("The break even points for m={0}".format(m))
             # print(keven)
         kevenf = pd.DataFrame(kevendict)
-        print(kevenf)
+        print(kevenf.to_latex(), file=open("keven.{0}.tex".format(m),'w'))
     if breakeven:
         lb,ub = computeBounds(df)
-        print(lb.T)
-        print(ub.T)
+        with open("bounds.tex", 'w') as boundfile:
+            print("%% tables of lower and upper bounds on the breakeven points", file=boundfile)
+            print(lb.to_latex(), file=boundfile)
+            print(ub.to_latex(), file=boundfile)
         mids = (lb+ub)/2
-        mids = mids.T
+        mids = mids
         print(mids)
