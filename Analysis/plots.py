@@ -28,14 +28,16 @@ def plotspeedup(spframe, m):
     """Plot the spframe with appropriate titles and axes
     each series is a fixed n, a function of k."""
     spframe["breakeven"] = 1
-    ax = spframe.plot(logy=False, logx=False)
+    spframe.index = np.log(spframe.index)
+    ax = spframe.plot(style='o-',logy=True)
     ax.set_ylabel("Time Full / Time Eager")
     ax.set_title("Runtime Ratios m = {0}".format(m))
+    ax.set_xlabel("log k")
     return ax
 
 def plotarcspeedup(spframe, m):
     """Plot speedup as a function of n each series is a fixed k"""
-    ax = spframe.T.plot()
+    ax = spframe.T.plot(style='o-')
     ax.set_ylabel("Time Full / Time Eager")
     ax.set_title("Algorithmic Speedup m = {0}".format(m))
     ax.set_xlabel("n")
