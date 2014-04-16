@@ -17,12 +17,14 @@
 % tables produced by ls sfm* | xargs -I % -n 1 sed s/NaN/---/g % | cat > tables.tex
 \input{tables.tex}
 \caption{Tables of $r_e$ for $m=100,500,1000$ dashes indicate the test was not run}
+\label{table:sfm}
 \end{figure}
 
 \begin{figure}
 \centering
 \input{keven.1000.tex}
-\caption{Experimentally determined breakeven points for $m=100,500,1000$. Dashes indicate the test was not run.}
+\caption{Model Predicted breakeven points for $m=100,500,1000$. Dashes indicate the test was not run.}
+\label{table:keven}
 \end{figure}
 
 \begin{figure}
@@ -30,4 +32,5 @@
 % tables produced
 \input{bounds.tex}
 \caption{Tables of bounds on the $k$ where $r_e=1$. lower bounds (left) followed by upper bounds (right), dashes indicate the test was not run}
+\label{table:bounds}
 \end{figure}
