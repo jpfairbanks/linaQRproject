@@ -5,30 +5,31 @@
 clear all
 
 %%%% Parameters to Change
-mvals = [100 500 1000];
+% mvals = [100 500 1000];
+mvals = [500];
 counter = 1;
 
         
 % create data storage matrix
-data = zeros(10000,12);
+data = zeros(150,12);
 
 for i = 1:1:length(mvals)
     m = mvals(i);
-    steps = floor(log2(m))-4 + 1;
+    steps = floor(log2(m))-1 + 1;
     
     % create appropriate n vector
     nvals = ones(1,steps+1);
     for j=2:1:steps
         nvals(j) = 2^(j-1);
     end
-    nvals = 16*nvals;
+    nvals = 2*nvals;
     nvals(steps+1) = m;
     
     
     for ii = 1:1:length(nvals)        
         n = nvals(ii);
-        stopval = n/4;
-        steps = floor(log2(n)) -2 + 1;
+        stopval = n/2;
+        steps = floor(log2(n)) -1 + 1;
     
         % create appropriate k vector
         if m ~= n
@@ -94,8 +95,8 @@ for i = 1:1:length(mvals)
             columnoffset = columnoffset+1;
             data(counter,columnoffset) = h;
             
-%             display(data(counter,:));
-            counter = counter + 1
+            display([m n k]);
+            counter = counter + 1;
             
         end
         
@@ -105,7 +106,7 @@ end
 
 
 data = data(1:counter,:);
-csvwrite('output.csv',data);
+csvwrite('workhourseoutput.csv',data);
 
 
 
