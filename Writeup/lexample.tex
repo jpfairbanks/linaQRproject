@@ -113,7 +113,8 @@ We must decide to go row-wise or column-wise and decide whether to eliminate fro
 We first eliminate row-wise operation. If we go from top to bottom row-wise, we will introduce zeros in the entire row by eliminating against row $1$.
 %This fact can be proved inductively.
 Eliminating the original entries of row $j$ will introduce fill in in all of row $j$.
-If we go from bottom to top, then we introduce oscillatory fill in. eliminating entry $m,i_2$ will introduce a zero in entry $m,i_1$ and vice versa.
+If we go from bottom to top, then we introduce oscillatory fill in.
+Eliminating entry $m,i_2$ will introduce a zero in entry $m,i_1$ and vice versa.
 
 This indicates that we should operate column-wise. If we eliminate entries from the left most nonzero column, we introduce fill-in entries on the first off diagonal of the entire matrix. We then eliminate the fill-in entries between the leftmost nonzero column (which has now been zeroed) and then next leftmost nonzero column.
 This incurs the cost of eliminating $i_{j+1}-i_{j}$ fill-in entries. We then eliminate column $i_{j+1}$ which introduces another off diagonal of fill-in entries.
@@ -246,6 +247,9 @@ Another perspective is determining for a fixed batch size $k$, how much faster i
 \input{discussion.tex}
 
 As detailed in Section~\ref{sec:compare}, the model described by Equation~\ref{eqn:model} can produce a prediction about the breakeven point by solving $C_m n = k$.  As described previously, we can determine $C_m$ experimentally from our data, and then use this value to predict where the breakeven point will occur.  Figure~\ref{table:keven} contains a table of experimentally determined breakeven points by using this method.  Comparing these values to their counterparts in Figure~\ref{table:bounds}, which contains our analytic model's lower and upper bound predictions for the breakeven points, we see that all of our experimental results fall within the bounds predicted by our analytic model.
+
+
+Since the analysis of the eager method is simpler, we present mostly the results of the eager code. However since the flop count of the lazy method is lower, it outperforms the eager method. This can be verified in Table~\ref{table:sle} which shows $\frac{T_{eager}(500,n,k)}{T_{lazy}(500,n,k)}$.
 
 \section{Conclusion}
 In this paper, we have shown how specialized algorithms can improve the performance of QR factorization updating under sparse additive updates.  We presented an analytic model for the performance gains. We used this model to predict the anticipated performance increase for various conditions.  Upon implementing the algorithms and comparing their performances experimentally, we corroborated the theory we had presented.

@@ -101,7 +101,7 @@ def computeBounds(df):
     #allocate
     lb = np.zeros((len(mlevels), len(nlevels)))
     ub = np.zeros((len(mlevels), len(nlevels)))
-    lbf= pd.DataFrame(index=nlevels) 
+    lbf= pd.DataFrame(index=nlevels)
     ubf= pd.DataFrame(index=nlevels)
     for i,m in enumerate(mlevels):
         for j,n in enumerate(nlevels):
@@ -113,7 +113,7 @@ def computeBounds(df):
 if __name__ == '__main__':
     #fp = "datafull.tsv"
     fp = "data/datafull.tsv"
-    plots = False
+    plots = True
     breakeven = True
     model = True
     #colnames = ["m", "n", "k", "tfull","teager","tlazy","sigfull","sigeager","siglazy","pfe", "pel", "pfl"]
@@ -152,3 +152,10 @@ if __name__ == '__main__':
         mids = (lb+ub)/2
         mids = mids
         print(mids)
+
+    if comparele:
+        fr = df[["m","n","k"]]
+        fr['speedup'] = (df['teager']/df['tlazy'])
+        fp = open("sle.tex",'w')
+        fp.write(speedupframe(fr,500).to_latex())
+        fp.close()
