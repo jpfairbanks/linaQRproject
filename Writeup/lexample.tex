@@ -199,7 +199,7 @@ We see that as $n$ increases the performance ratio should increase for a fixed $
 From Equation~\ref{eqn:ratio} we can see that as $m$ increases for a fixed $n,k$ pair the proportionality parameter $C_m$ should increase.
 When $r_e=1$, the two methods will require the same amount of time. The $k$ value for which this occurs is called the break even point.
 The model described by Equation\ref{eqn:model} can produce a prediction about the break even point by solving $C_mn/k = 1$, that is, $C_mn = k$.
-This relationship indicates that the break even point will increase as the size of the matrix increases. We verify this experimentally in the next section.
+Applying $C_{m}$ is increasing in $m$, this relationship indicates that the break even point will increase as the size of the matrix increases. We verify this experimentally in the next section.
 
 
 %\frac{4m^2n - 4mn^2 + 4n^3/3 + 2n^2(m-n/3)}{m^2k + n^2k} &= C_1\frac{n + m-n}{k + (m/n)^2k} + C_2\frac{m^2n-mn^2}{m^2k + n^2k}\\
@@ -211,7 +211,7 @@ Our input space has three dimensions: the number of rows of $A$, $m$; the number
     n \in &\{ 2^i \mid 1\le i \le \log{\left(m\right)}\}\\
     k \in &\{ 2^i \mid 1 \le i \le \log{\left(n/2\right)}\}
 \end{align*}
-Altogether, this resulted in over 100 distinct combinations of $(m,n,k)$ .  To compare each algorithm's runtime for a $(m,n,k)$-combination, we applied the following testing procedure:
+Altogether, this resulted in over 100 distinct combinations of $(m,n,k)$.  To compare each algorithm's runtime for a $(m,n,k)$~combination, we applied the following testing procedure:
 
 For given values of $m$, $n$, and $k$,
 \begin{enumerate}
