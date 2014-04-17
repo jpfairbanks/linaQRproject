@@ -70,7 +70,7 @@
 \maketitle
 
 \begin{abstract}
-Abstract goes here.
+QR factorizations can be an important tool when applying least squares fits to data. However, data updates cause changes to QR factorizations, which require computation.  Often, full re-computation of a QR factorization is required via Householder transformations. When the data changes in a sparse, additive way, however, it is possible to avoid full re-computation by leveraging the specialized structure of the update.  This accelerates computation of the new QR factorization. In this paper, we detail the matrix and sparsity conditions for which specialized updating algorithms outperform full QR re-computation.
 \end{abstract}
 
 \begin{keywords} 
@@ -87,45 +87,42 @@ QR factorization, Incremental Computation, Streaming Linear Algebra.
 
 
 \section{Introduction and examples}
-This paper concerns the goal of maintaining a least squares fit with changing data. In the literature, low rank updates, and the addition of new data points 
-have been studied \cite{incrementalGivens} \cite{LowrankQRupdate}. In this work we address making changes to dimensions of the observed data. 
-We take the case where $A$ is an $m\times n$ matrix with $m \ge n $. We have an update to $A$ called $\Delta A$ which has only a few nonzero columns.
-This can correspond to the fact that a few dimensions have updates. For example when studying the term document matrix $A_{i,j}$ represents the number of 
-occurances of word $i$ in document $j$. If the $j$th document changes and thus acquires new words then $\Delta A$ will contain nonzero entries only in the $j$th column.
-We can take advantage of this structure and accelerate the QR decomposition of $A+\Delta A$ by leveraging the information contained in the QR factorization of $A$.
+This paper concerns the goal of maintaining a least squares fit with changing data. In current literature, the changes in matrix factorizations caused by low rank updates and the addition of new data points
+have been studied \cite{incrementalGivens} \cite{LowrankQRupdate}. In this work, our objective is to address how the QR factorization changes resulting from sparse additive changes to the observed data and to determine when it is possible to use specialized algorithms to accelerate computing the updated QR factorization. 
 
-Another example is a dynamic graph where new edges are presented and the algorithm is using a low rank representation of vertices based on $QR_k$ where $R_k$ a rank $k$ truncated version of $R$.
-Then updates to $A$ are the new edges and changes in this low rank representation can be used to study the dynamics of the graph \cite{lowrankgraphrepresentations}.
+We examine when $A$ is an $m\times n$ matrix with $m \ge n $. We have an update to $A$ called $\Delta A$ which has only a few nonzero columns.
+This would represent a case when only a few dimensions have updates. For example, when studying the term document matrix $A_{i,j}$ represents the number of 
+occurances of word $i$ in document $j$. If the $j$th document changes and thus acquires new words then $\Delta A$ will contain nonzero entries only in the $j$th column. Another example is a dynamic graph where new edges are presented and the algorithm is using a low rank representation of vertices based on $QR_k$ where $R_k$ a rank $k$ truncated version of $R$. Then, updates to $A$ are the new edges and changes in this low rank representation can be used to study the dynamics of the graph \cite{lowrankgraphrepresentations}. In both cases, we can take advantage of the special structure of $\Delta A$ to accelerate the QR decomposition of $A+\Delta A$ by leveraging the information contained in the QR factorization of $A$.
 
 \subsection{Goals}
-In this paper we present two specialized forms of the givens rotation algorithm that perform these updates. We give an equation counting the flops used by each method, and compare them to standard Householder QR algorithm. 
-Since these equations depend on which columns are updated, we give an average case analysis under the model of randomly selected columns. We experimentally estimate the cross over point for various values of $m,n,k$ where $m$ is the number of rows, $n$ is the number of columns and $k$ is the number of updated columns.
+In this paper we present two specialized forms of the Givens rotation algorithm that perform these updates. We provide an equation counting the flops required by each method, and compare them to the standard Householder QR algorithm. 
+Since these equations depend on the specific column being updated, we provide an average case analysis for randomly selected columns. We experimentally estimate the cross over point for various values of $m,n,k$ where $m$ is the number of rows, $n$ is the number of columns and $k$ is the number of updated columns.
 \section{Algorithm}
-We exploit a key structure in this problem, which is that if $X = xe_i^T$ for some vector $x\in \R^m$ and $Q$ is a matrix in $\R^{m\times n}$ then $Q^TX$ has nonzero entries only in the $i$th column.
-These implies that updates to any number of data elements that occur in the same dimension, incur the same number of nonzero entries when an attempt is made to update the QR factorization.
-We also use the fact that Givens rotations are able to selectively eliminate entries of a matrix while creating the orthogonal transformation $Q$ and upper triangular factor $R$.
-This selectivity allows us to use Givens rotations in a way that we could not use Householder transformations. For example if the $i$th column of $A$ contained nonzero elements, then applying a Householder transformation
-on the $ith$ dimension would create fill-in entries in potentially every element in columns $i$ through $n$. Thus our sparsity structure has been completely nullified in the process of a single Householder transformation. And this would necessitate performing $n-i$ transformations to fix the damage caused by changing the $ith$ column.
+We exploit a key structure in this problem. If $X = xe_i^T$ for some vector $x\in \R^m$ and $Q$ is a matrix in $\R^{m\times n}$ then $Q^TX$ has nonzero entries only in the $i$th column.
+This implies that updates to any number of data elements in the same dimension will incur the same number of nonzero entries when attempting to update the QR factorization.
+We also leverage Givens rotations to selectively eliminate entries of a matrix while creating the orthogonal transformation $Q$ and upper triangular factor $R$.
+This selectivity allows us to use Givens rotations in a way that we could not use Householder transformations. For example, consider the case when the $i$th column of $A$ contained nonzero elements.  Applying a single Householder transformation
+on the $ith$ dimension would create fill-in entries in potentially every element in columns $i$ through $n$, completely nullifying our sparsity structure. Consequently, this would require performing $n-i$ transformations to restore the damage caused by changing the $ith$ column.
 
-The Givens rotations allow us to selectively eliminate entries of the matrix and in the next section we will consider different possible orderings of the rotations and count the fill-in introduced by each ordering.
+In contrast, the Givens rotations allow us to selectively eliminate entries of the matrix with only minor fill-in penalties, which vary based on the order and location of Givens rotations. The next section will detail various rotation-ordering algorithms, count the fill-in introduced by each ordering, and determine the algorithm that incurs the smallest fill-in penalty.
 \section{Annihilation Ordering}
-We must decide to go row-wise or column-wise and decide whether to eliminate from the top to bottom or bottom to top.
-We first eliminate row-wise operation. If we go from top to bottom row-wise, we will introduce zeros in the entire row by eliminating against row $1$.
+When considering how to order our Givens rotations, we must decide whether to go row-wise or column-wise and  whether to annihilate entries from top-down or from bottom-up.
+We first examine row-wise operation. If we eliminate from top to bottom row-wise, we will introduce zeros in the entire row by eliminating against row $1$.
 %This fact can be proved inductively.
-Eliminating the original entries of row $j$ will introduce fill in in all of row $j$.
-If we go from bottom to top, then we introduce oscillatory fill in.
-Eliminating entry $m,i_2$ will introduce a zero in entry $m,i_1$ and vice versa.
+Eliminating the original entries of row $j$ will introduce fill-in in all of row $j$.
+If we go from bottom to top, then we introduce oscillatory fill-in.
+Eliminating entry $m,i_2$ will introduce a zero in entry $m,i_1$ and vice versa. This indicates that we should operate column-wise. 
 
-This indicates that we should operate column-wise. If we eliminate entries from the left most nonzero column, we introduce fill-in entries on the first off diagonal of the entire matrix. We then eliminate the fill-in entries between the leftmost nonzero column (which has now been zeroed) and then next leftmost nonzero column.
-This incurs the cost of eliminating $i_{j+1}-i_{j}$ fill-in entries. We then eliminate column $i_{j+1}$ which introduces another off diagonal of fill-in entries.
+When operating column-wise, if we eliminate entries from the left-most nonzero column, we introduce fill-in entries on the first off-diagonal of the entire matrix. We then eliminate the fill-in entries between the left-most nonzero column (which has now been zeroed) and then next leftmost nonzero column.
+This incurs the cost of eliminating $i_{j+1}-i_{j}$ fill-in entries. We then eliminate column $i_{j+1}$ which introduces another off-diagonal of fill-in entries.
 The total number of fill-in entries eliminated is 
 \[ Lazy = \sum_{j=1}^k \sum_{t=1}^j (i_{j+1} - i_{j} - t) = \sum_{j=1}^k j(i_{j+1}-i_{j} - \frac{j+1}{2})
 \]
-This is called the lazy elimination strategy because we defer elimination of fill-in entries until the last possible moment.
+We call this the lazy elimination strategy because we defer elimination of fill-in entries until the last possible moment.
 
-The eager strategy eliminates fill-in as soon as it is created. We eliminate column $i_j$ and this fills in the first off diagonal. Then before eliminating column $i_{j+1}$ we annihilate the first off-diagonal entries. Then when eliminating column $i_{j+1}$ we reintroduce fill-in on the first off diagonal between columns $i_{j+1}$ and $n$.
+An alternative strategy is to eliminate fill-in as soon as it is created. We call this the eager elimination strategy. We eliminate column $i_j$ and this fills in the first off-diagonal. Then before eliminating column $i_{j+1}$ we annihilate the first off-diagonal entries. Then, when eliminating column $i_{j+1}$ we reintroduce fill-in on the first off-diagonal between columns $i_{j+1}$ and $n$.
 The total number of fill-in entries removed is
-\[ Eag = \sum_{j=1}^k j(n - i_{j}) = n\sum_{j=1}^k j - \sum_{j=1}^k ji_j = \frac{nk(k+1)}{2} - \sum_{j=1}^k i_j
+\[ Eager = \sum_{j=1}^k j(n - i_{j}) = n\sum_{j=1}^k j - \sum_{j=1}^k ji_j = \frac{nk(k+1)}{2} - \sum_{j=1}^k i_j
 %\sum_{j=1}^k n-i_j + \sum_{j=1}^k j(i_{j+1}-i_{j} - \frac{j+1}{2}
 \]
 Both methods must eliminate the original nonzeros which are counted by $\sum_{j=1}^k n-i_j $. 
@@ -133,14 +130,13 @@ Both methods must eliminate the original nonzeros which are counted by $\sum_{j=
 Eager-Lazy &= \sum_{j=1}^k nj - \sum_{j=1}^k ji_j - \sum_{j=1}^k j(i_{j+1}-i_{j} + \frac{j+1}{2}) \\
 & = \sum_{j=1}^k nj - \sum_{j=1}^k j(i_{j+1} + \frac{j+1}{2})
 \end{align}
-Since $n\ge i_{j+1}$ for all $j$, we conclude that the lazy strategy is more efficient.
-That is, the lazy elimination strategy uses fewer eliminations than the eager strategy.
-The core cause of this discrepancy is that the lazy strategy eliminates the $k$ off diagonals and the eager strategy eliminates the first off diagonal $k$ times, and since the $i$th off diagonal has $n-i$ elements, this is more efficient.
+Since $n\ge i_{j+1}$ for all $j$, we conclude that the lazy strategy is more efficient than the eager strategy. That is, the lazy elimination strategy requires fewer eliminations.
+The primary reason is because the lazy strategy eliminates the $k$ off-diagonals while the eager strategy eliminates the first off-diagonal $k$ times. Since the $i$th off-diagonal has $n-i$ elements, there are fewer fill-in entries for the lazy method to eliminate.  Thus, it is more efficient.
 %\sum_{j=1}^k n-i_j +
 
 \subsection{Another interpretation of the eager method}
 We will now explain the eager method using an alternative definition. Suppose that $\Delta A = \sum_{j=1}^k A_j$ where each $A_j$ has nonzero entries only in the $i_j$th column. That is $A_j = xe_{i_j}^T$
-Then we can use $k$ updates on a single column each. We make use of the equations 
+Then we can apply $k$ single-column updates. We make use of the equations 
 \begin{align*}
 Q^TA_1 + R &= Q_1 R_1 \\
 Q_1^TA_2 + R_1 &= Q_2 R_2 \\
@@ -149,43 +145,43 @@ Q_{k-1}^TA_k + R_{k-1} &= Q_k R_k
 \end{align*}
 
 If we iteratively add one column at a time, then Givens rotations allows us to compute $Q_{j+1}, R_{j+1}$ from $Q_j,R_j+Q_jA_{j+1}$.
-This requires $m-i_j$ rotations to elinate the one column and fills in one off diagonal with $n-i_j$ elements. 
+This requires $m-i_j$ rotations to eliminate the one column and fills in one off-diagonal with $n-i_j$ elements. 
 This gives 
 \[6(n-i_j)(m-i_j) + 6(n-i_j)(n-i_j)\]
-flops to  perform the rotations and
+flops to perform the rotations and
 \[6n(m-i_j) + 6n(n-i_j)\]
 flops to update $Q$
-Each iteration also requires a single dense matrix vector product because we must compute $Q_j^TA_{j+1} + R_j$
+Each iteration also requires a single, dense matrix-vector product because we must compute $Q_j^TA_{j+1} + R_j$
 We must perform this $k$ times. 
 
-If we examine this method, we see that when performing the factorization
+When examining this method, we see that performing the factorization
 \[Q_{k-1}^TA_k + R_{k-1} = Q_k R_k \]
- we introduce the fill in entries and immediately eliminate them. This recovers the eager strategy discussed earlier.
+ introduces the fill-in entries and immediately eliminates them. This recovers the eager strategy discussed earlier.
 \todo[inline]{Should we present this interpretation first?}
 
 \section{Comparison to Householder QR factorization}\label{sec:compare}
-From Golub and Van Loan, we have the flop counts of the Householder reflection method where we are accumulating the orthogonal basis $Q$ as $4(m^2n - mn^2 +n^3/3) + 2(n^2m - n/3)$. 
-We know that the static Givens rotations methods takes $6mn(n+1)/2 + 6mn^2$ to accumulate the orthogonal matrix $Q$. 
-Our method depends on which particular columns are perturbed by the update and so gives much more complicated formula. 
+From Golub and Van Loan, the required flop count for the Householder reflection method when accumulating the orthogonal basis $Q$ is $4(m^2n - mn^2 +n^3/3) + 2(n^2m - n/3)$. 
+We know that the static Givens rotations method takes $6mn(n+1)/2 + 6mn^2$ to accumulate the orthogonal matrix $Q$. 
+Our method depends on the particular columns perturbed by the update, which leads to a more complicated formula. 
 Let $(\cdot)^+$ be the function $max(\cdot, 0)$.
 For the sparse update we use at most
 \[
   \sum_{j=1}^k 6(n-i_j)(m-i_j) + 6(n-i_{j})^{+}
 \]
-flops for eliminating the fill in. This is an upper bound because when counting the flops for eliminating the fill in entries, we count all of the fill in entries that are in the $j$th gap, as if they are at the position $(i_{j+1},i_j)$. These flops are also accompanied by the flops necessary to update $Q$, which are counted as
+flops for eliminating the fill-in. This value is an upper bound because when counting the flops for eliminating the fill-in entries, we count all of the fill-in entries that are in the $j$th gap, as if they are at the position $(i_{j+1},i_j)$. These flops are also accompanied by the flops necessary to update $Q$, which are counted as
 
 \[
   \sum_{j=1}^k 6n(m-i_j) + 6nj\left(i_{j+1}-i_{j} + \frac{j+1}{2}\right)
 \]
 
-We can compare the flop counts of full recomputation with our sparse update methods. For the purpose of analytic tractability we will use the eager method and make use order of growth bounds.
+We can compare the flop counts of full re-computation with our sparse update methods. For the purpose of analytic tractability we will use the eager method and make use of order of growth bounds.
 Under the assumption that $m\ge n$ and $m\approx m-1, n\approx n-1$ $k=1$ and $i_1=1$
 \begin{align*}
 T_{eager}(m,n,k) &= 6(n-1)(m-1) + 6(n-1)(n-1) + 6n(m-1) + 6n(n-1) + m^2\\
     &\approx 12(nm+n^2) + m^2
 \end{align*}
-We can thus suppose that we are making $k$ updates to an $m,n$ matrix, we bound the cost of this operation by the $k$ times the cost to update the first column, which is the most expensive column to update.
-Thus we can derive a lower bound on the ratio of $T_{full}$ to $T_{eager}$.
+We can thus suppose that we are making $k$ updates to an $m,n$ matrix. We bound the cost of this operation by the $k$ times the cost to update the first column, which is the most expensive column to update.
+Thus, we can derive a lower bound on the ratio of $T_{full}$ to $T_{eager}$.
 
 \begin{align}\label{eqn:ratio}
   \frac{T_{full}}{T_{eager}}(m,n,k) &\ge \frac{4m^2n - 4mn^2 + 4n^3/3 + 2n^2(m-n/3)}{12k(nm+n^2) + km^2}\\
@@ -193,17 +189,17 @@ Thus we can derive a lower bound on the ratio of $T_{full}$ to $T_{eager}$.
         %&\ge \frac{m^2n}{3k(nm+n^2) + km^2/4} - \frac{2mn^2}{12k(nm+n^2) + km^2} + \frac{2n/3}{12k(m/n+n) + k(m/n)^2}
 \end{align}
 
-For a fixed $m$ large enough, the Householder based methods are cubic in $n$ and the sparse updating methods are quadratic in $n$ because we need to accumulate $Q$. 
-Thus making this simplification we can model the performance ratio as
+For a fixed $m$ large enough, the Householder based methods are cubic in $n$, while the sparse updating methods are quadratic in $n$ because we need to accumulate $Q$. 
+By making this simplification we can model the performance ratio as
 \begin{equation}\label{eqn:model}
     r_e(m,n,k) = \frac{C_m n^3}{n^2k} = \frac{Cn}{k}
 \end{equation}
 The relationship between $m$ and $n$ is accounted for in the dependence of $C_m$ on $m$. This model is useful for understanding the experimental results below.
-We see that as $n$ increases the performance ration should increase for a fixed $k$, and for a fixed $n$ the performance ratio is inversely proportional to $k$.
+We see that as $n$ increases the performance ratio should increase for a fixed $k$; for a fixed $n$ the performance ratio is inversely proportional to $k$.
 From Equation~\ref{eqn:ratio} we can see that as $m$ increases for a fixed $n,k$ pair the proportionality parameter $C_m$ should increase.
-When $r_e=1$ the two methods will take the same amount of time, and the $k$ for which this occurs is called the break even point.
-The model described by Equation\ref{eqn:model} can produce a prediction about the break even point by solving $C_mn/k = 1$ that is $C_mn = k$.
-So this tells us that the break even point will increase as the size of the matrix increases. We verify this experimentally in the next section.
+When $r_e=1$, the two methods will require the same amount of time. The $k$ value for which this occurs is called the break even point.
+The model described by Equation\ref{eqn:model} can produce a prediction about the break even point by solving $C_mn/k = 1$, that is, $C_mn = k$.
+This relationship indicates that the break even point will increase as the size of the matrix increases. We verify this experimentally in the next section.
 
 
 %\frac{4m^2n - 4mn^2 + 4n^3/3 + 2n^2(m-n/3)}{m^2k + n^2k} &= C_1\frac{n + m-n}{k + (m/n)^2k} + C_2\frac{m^2n-mn^2}{m^2k + n^2k}\\
@@ -227,26 +223,25 @@ For given values of $m$, $n$, and $k$,
 \item Determine median runtime 
 \item Perform Signed-Rank Test to determine statistical significance
 \end{enumerate}
-The signed rank test tells us if the difference of the two median runtimes are distinct, taking advantage
-of the fact that the runtime of the methods depend on which positions the perterbations occurred in.
+The signed rank test indicates whether the difference of the two median runtimes is distinct. This is important because the runtime of the methods depends on the positions of the perturbations.
 We implemented the three algorithms in Matlab and performed all testing on a laptop computer with an Intel i7 processor operating at 2.2 GHz.
 
 \section{Results and Discussion}
 
-After computing $t_{full}$, $t_{eager}$ and $t_{lazy}$,  the median runtime for each algorithm, we investigated the ratios of algorithm runtimes for various cross-sections in our data.  The most interesting ratios were
+After computing $t_{full}$, $t_{eager}$ and $t_{lazy}$, the median runtime for each algorithm, we investigated the ratios of algorithm runtimes for various cross-sections in our data.  The most interesting ratios were
 
 \[r_l(m,n,k) = \frac{t_{full}(m,n,k)}{t_{lazy}(m,n,k)}
 \textrm{\hspace{1cm}and\hspace{1cm}}
 r_e(m,n,k) = \frac{t_{full}(m,n,k)}{t_{eager}(m,n,k)}\]
-Whenever these ratios are greater than 1, the specialized updating algorithms perform better than re-computing the QR factorization using Householder transformations. Once these ratios become less than 1, however, it is more advantageous to re-compute the QR factorization. In Figure~\ref{fig:1000plot} (left), we plot $r_l (m,n,k)$ versus $\log{k}$ for fixed values of $n$\footnote{This perspective is useful when the data vectors are of a fixed dimension and a practitioner is determining how columns can be altered in one batch before recomputation is more efficient than updating.  }. From these plots, we see that as $\log{k}$ increases, $r_l$ decreases for fixed $n$.  Specifically, we see a negative linear relationship, which confirms the inverse proportionality we anticipated in Section~\ref{sec:compare}\footnote{ We only show $r_l$ since lazy outperformed eager in nearly every case}.
+Whenever these ratios are greater than 1, the specialized updating algorithms perform better than re-computing the QR factorization using Householder transformations. Once these ratios become less than 1, however, it is more advantageous to re-compute the QR factorization. In Figure~\ref{fig:1000plot} (left), we plot $r_e (m,n,k)$ versus $\log{k}$ for fixed values of $n$\footnote{This perspective is useful when the data vectors are of a fixed dimension and a practitioner is determining how columns can be altered in one batch before recomputation is more efficient than updating.  }. From these plots, we see that as $\log{k}$ increases, $r_e$ decreases for fixed $n$.  Specifically, we see a negative linear relationship, which confirms the inverse proportionality we anticipated in Section~\ref{sec:compare}\footnote{ We only show $r_e$ since the eager method is easier to compare to its analytic model}.
 
-On these plots we also include a line called {\texttt breakeven}, which indicates when $r_l$ is equal to 1. All points above this line imply the lazy updating algorithm is faster, while all points below this line imply the Householder algorithm is faster.  By comparing the rl curves to the breakeven line, we see that the breakeven $k$ value increases as $n$ increases.  We also see that as $m$ increases (successively lower plots), the curves shift up and to the right, indicating improved performance of the lazy algorithm.  For example, the $n=64$ curve crosses the breakeven line at $log(k) = 1.25$ for $m = 100$; at $\log(k) = 2.6$ for $m = 500$; and, at $\log(k) = 2.8$ for $m =1000$.  This tells us that the breakeven $k$ value increases as $m$ increases, for fixed $n$.  Thus, we have experimentally shown what we had predicted in Section\ref{sec:compare}: as the matrix size increases in either dimension, the breakeven point increases.
+On these plots we also include a line called {\texttt breakeven}, which indicates when $r_e$ is equal to 1. All points above this line imply the lazy updating algorithm is faster, while all points below this line imply the Householder algorithm is faster.  By comparing the $r_e$ curves to the breakeven line, we see that the breakeven $k$ value increases as $n$ increases.  We also see that as $m$ increases (successively lower plots), the curves shift up and to the right, indicating improved performance of the lazy algorithm.  For example, the $n=64$ curve crosses the breakeven line at $log(k) = 1.25$ for $m = 100$; at $\log(k) = 2.6$ for $m = 500$; and, at $\log(k) = 2.8$ for $m =1000$.  This tells us that the breakeven $k$ value increases as $m$ increases, for fixed $n$.  Thus, we have experimentally shown what we had predicted in Section\ref{sec:compare}: as the matrix size increases in either dimension, the breakeven point increases.
 
-Another perspective is determining for a fixed batch size $k$, how much faster is updating only that batch compared to the entire factorization as a function of the dimensionality of the problem $n$. We show this type of perspective in the plots of Figure~\ref{fig:1000plot} (right).  Here, we plot $r_l (m,n,k)$ versus n for fixed values of $k$ FOOTNOTE. We see that there is nearly linear growth in $r(m_0, n, k_0)$ as $n$ increases, when $m$ is large. This is what we would expect from the analytic bounds on flop counts, as detailed in Section 4. We also see that as m increases, (successively lower plots), the curves shift upward for a fixed combination of n, k.  For example, for $m=100$, the $k=1$ curve has an $r_l$ value of $5.5$ at $n = 100$; for $m=500$, the $k=1$ curve has an $r_l$ value of $22$ at $n = 500$; and, for $m=1000$, the $k=1$ curve has an $r_l$ value of 32 for $m =1000$.  Thus, as $m$ increases for a fixed $n,k$ pair, the $C_m$ value increases, which corroborates our theory from Section\ref{sec:compare}.  We provide the tables that contain all of the data used to construct the plots in Figure~\ref{fig:1000plot} (left and right) in Figure~\ref{table:sfm}.
+Another perspective is determining for a fixed batch size $k$, how much faster is updating only that batch compared to the entire factorization as a function of the dimensionality of the problem $n$. We show this type of perspective in the plots of Figure~\ref{fig:1000plot} (right).  Here, we plot $r_e (m,n,k)$ versus n for fixed values of $k$. We see that there is nearly linear growth in $r(m_0, n, k_0)$ as $n$ increases, when $m$ is large. This is what we would expect from the analytic bounds on flop counts, as detailed in Section 4. We also see that as m increases, (successively lower plots), the curves shift upward for a fixed combination of n, k.  For example, for $m=100$, the $k=1$ curve has an $r_e$ value of $5.5$ at $n = 100$; for $m=500$, the $k=1$ curve has an $r_e$ value of $22$ at $n = 500$; and, for $m=1000$, the $k=1$ curve has an $r_e$ value of 32 for $m =1000$.  Thus, as $m$ increases for a fixed $n,k$ pair, the $C_m$ value increases, which corroborates our theory from Section\ref{sec:compare}.  We provide the tables that contain all of the data used to construct the plots in Figure~\ref{fig:1000plot} (left and right) in Figure~\ref{table:sfm}.
 
 \input{discussion.tex}
 
-As detailed in Section~\ref{sec:compare}, the model described by Equation~\ref{eqn:model} can produce a prediction about the breakeven point by solving $C_m n = k$.  As described previously, we can determine $C_m$ experimentally from our data, and then use this value to predict where the breakeven point will occur.  Figure~\ref{table:keven} contains a table of experimentally determined breakeven points by using this method.  Comparing these values to their counterparts in Figure~\ref{table:bounds}, which contains our analytic model's lower and upper bound predictions for the breakeven points, we see that all of our experimental results fall within the bounds predicted by our analytic model.
+As detailed in Section~\ref{sec:compare}, the model described by Equation~\ref{eqn:model} can produce a prediction of the breakeven point by solving $C_m n = k$.  As described previously, we can determine $C_m$ experimentally from our data, and then use this value to predict where the breakeven point will occur.  Figure~\ref{table:keven} contains a table of experimentally determined breakeven points by using this method.  Comparing these values to their counterparts in Figure~\ref{table:bounds}, which contains our analytic model's lower and upper bound predictions for the breakeven points, we see that all of our experimental results fall within the bounds predicted by our analytic model.
 
 
 Since the analysis of the eager method is simpler, we present mostly the results of the eager code. However since the flop count of the lazy method is lower, it outperforms the eager method. This can be verified in Table~\ref{table:sle} which shows $\frac{T_{eager}(500,n,k)}{T_{lazy}(500,n,k)}$.
