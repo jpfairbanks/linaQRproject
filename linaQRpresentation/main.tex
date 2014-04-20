@@ -37,23 +37,23 @@
 %\usetheme{Szeged}
 %\usetheme{Warsaw}
 \usecolortheme{lily}
-\title{Updating QR Factorization Under Sparse Updates.}
+%\title{Updating QR Factorization Under Sparse Updates.}
 
 % A subtitle is optional and this may be deleted
 %\subtitle{}
-\author{James Fairbanks\inst{1} \and Domenic Carr\inst{2}}
+%\author{James Fairbanks\inst{1} \and Domenic Carr\inst{2}}
 % - Give the names in the same order as the appear in the paper.
 % - Use the \inst{?} command only if the authors have different
 %   affiliation.
 
-\institute[Georgia Tech] % (optional, but mostly needed)
-{
-  \inst{1}%
-  School of CSE
-  \and
-  \inst{2}%
-  School of ECE
-  }
+%\institute[Georgia Tech] % (optional, but mostly needed)
+%{
+%  \inst{1}%
+%  School of CSE
+%  \and
+%  \inst{2}%
+%  School of ECE
+%  }
 % - Use the \inst command only if there are several affiliations.
 % - Keep it simple, no one is interested in your street address.
 
@@ -71,24 +71,24 @@
 % Let's get started
 \begin{document}
 
-\begin{frame}
-  \titlepage
-\end{frame}
+%\begin{frame}
+%  \titlepage
+%\end{frame}
 
 
-\begin{frame}{Overview}{}
-  \begin{itemize}
-  \item 
-    In a least squares problem, the data might change. If the change occurs in a sparse way the QR decomposition can be updated faster than recomputation.
-    \item
-    First goal: Present a method that leverages the specialized structure of the update to accelerate QR computation
-    \item Second goal: Experimentally determine the crossover point for different $m$, $n$, $k$ values at which recomputation is faster than  specialized updating.
-  \end{itemize}
-\end{frame}
+%\begin{frame}{}{}
+%  \begin{itemize}
+%  \item 
+%    In a least squares problem, the data might change. If the change occurs in a sparse way the QR decomposition can be updated faster than recomputation.
+%    \item
+%    First goal: Present a method that leverages the specialized structure of the update to accelerate QR computation
+%    \item Second goal: Experimentally determine the crossover point for different $m$, $n$, $k$ values at which recomputation is faster than  specialized updating.
+%  \end{itemize}
+%\end{frame}
 
 % You can reveal the parts of a slide one at a time
 % with the \pause command:
-\begin{frame}{Updating Algorithms} The total number of fill-in entries eliminated is 
+\begin{frame}{Updating QR Factorization Under Sparse Updates - Fairbanks and Carr} The total number of fill-in entries eliminated is 
 \[ Lazy = \sum_{j=1}^k \sum_{t=1}^j (i_{j+1} - i_{j} - t) = \sum_{j=1}^k j(i_{j+1}-i_{j} - \frac{j+1}{2})
 \]
 This is called the lazy elimination strategy because we defer elimination of fill-in entries until the last possible moment.
@@ -100,6 +100,28 @@ The total number of fill-in entries removed is
 \]
 Both methods must eliminate the original nonzeros which are counted by $\sum_{j=1}^k n-i_j $. 
 
+\end{frame}
+
+\begin{frame}
+\frametitle{Eager method}
+%We will now explain the eager method using an alternative definition. 
+Suppose that $\Delta A = \sum_{j=1}^k A_j$ where each $ A_j$ = xe_{i_j}^T$
+%Then we can apply $k$ single-column updates. We make use of the equations 
+\begin{align*}
+Q^TA_1 + R &= Q_1 R_1 \\
+\vdots\\
+Q_{k-1}^TA_k + R_{k-1} &= Q_k R_k 
+\end{align*}
+
+% If we iteratively add one column at a time, then Givens rotations allows us to compute $Q_{j+1}, R_{j+1}$ from $Q_j,R_j+Q_jA_{j+1}$.
+% This requires $m-i_j$ rotations to eliminate the one column and fills in one off-diagonal with $n-i_j$ elements. 
+ This gives 
+$6(n-i_j)(m-i_j) + 6(n-i_j)(n-i_j) $
+flops to perform the rotations and
+$6n(m-i_j) + 6n(n-i_j) $
+flops to update $Q$
+Each iteration also requires a single, dense matrix-vector product because we must compute $Q_j^TA_{j+1} + R_j$
+We must perform this $k$ times.
 \end{frame}
 
 \begin{frame}{Crossover Theory} 
